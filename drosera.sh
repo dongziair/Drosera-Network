@@ -126,83 +126,6 @@ trap cleanup EXIT
 # 命令1：安装 Drosera 节点
 function install_drosera_node() {
     echo "开始安装 Drosera 节点..."
-    
-    # 更新系统包并安装依赖
-    echo "正在更新系统包并安装依赖..."
-    apt-get update && apt-get upgrade -y -o Dpkg::Options::="--force-confold" || { echo "系统包更新失败"; exit 1; }
-    apt-get install -y curl ufw iptables build-essential git wget lz4 jq make gcc nano automake autoconf tmux htop nvme-cli libgbm1 pkg-config libssl-dev libleveldb-dev tar clang bsdmainutils ncdu unzip -o Dpkg::Options::="--force-confold" || { echo "依赖安装失败"; exit 1; }
-    echo "依赖安装完成"
-
-    # 检查并安装 jq
-    if ! command -v jq &> /dev/null; then
-        echo "jq 未安装，正在安装..."
-        apt-get install -y jq -o Dpkg::Options::="--force-confold" || { echo "jq 安装失败"; exit 1; }
-        echo "jq 安装完成"
-    else
-        echo "jq 已安装，检查更新..."
-        apt-get install -y jq -o Dpkg::Options::="--force-confold"
-    fi
-
-    # 检查并安装 Docker
-    if ! command -v docker &> /dev/null; then
-        echo "Docker 未安装，正在安装..."
-        apt-get install -y apt-transport-https ca-certificates curl software-properties-common -o Dpkg::Options::="--force-confold"
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-        add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-        apt-get update
-        apt-get install -y docker-ce docker-ce-cli containerd.io -o Dpkg::Options::="--force-confold" || { echo "Docker 安装失败"; exit 1; }
-        echo "Docker 安装完成"
-    else
-        echo "Docker 已安装，检查更新..."
-        apt-get install -y docker-ce docker-ce-cli containerd.io -o Dpkg::Options::="--force-confold"
-    fi
-
-    # 启动并启用 Docker 服务
-    systemctl start docker || { echo "Docker 服务启动失败"; exit 1; }
-    systemctl enable docker || { echo "Docker 服务启用失败"; exit 1; }
-
-    # 检查并安装 Docker Compose
-    if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
-        echo "Docker Compose 未安装，正在安装最新版本..."
-        curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        chmod +x /usr/local/bin/docker-compose
-        docker-compose --version &> /dev/null || { echo "Docker Compose 安装失败"; exit 1; }
-        echo "Docker Compose 安装完成"
-    else
-        echo "Docker Compose 已安装，检查更新..."
-        curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        chmod +x /usr/local/bin/docker-compose
-    fi
-
-    # 安装 Bun
-    echo "正在安装 Bun..."
-    if ! command -v unzip &> /dev/null; then
-        apt-get install -y unzip -o Dpkg::Options::="--force-confold" || { echo "unzip 安装失败"; exit 1; }
-        echo "unzip 安装完成"
-    fi
-    curl -fsSL https://bun.sh/install | bash || { echo "Bun 安装失败"; exit 1; }
-    if [ -f "/root/.bun/bin/bun" ]; then
-        echo "Bun 安装完成"
-        export PATH=$PATH:/root/.bun/bin
-        echo 'export PATH=$PATH:/root/.bun/bin' >> /root/.bashrc
-    else
-        echo "Bun 安装失败，请检查网络或 https://bun.sh/install"
-        exit 1
-    fi
-
-    # 安装 Foundry
-    echo "正在安装 Foundry..."
-    curl -L https://foundry.paradigm.xyz | bash || { echo "Foundry 安装失败"; exit 1; }
-    if [ -f "/root/.foundry/bin/foundryup" ]; then
-        /root/.foundry/bin/foundryup
-        export PATH=$PATH:/root/.foundry/bin
-        echo 'export PATH=$PATH:/root/.foundry/bin' >> /root/.bashrc
-        forge --version || { echo "forge 未安装"; exit 1; }
-        echo "Foundry 安装完成"
-    else
-        echo "Foundry 安装失败，请检查网络或 https://foundry.paradigm.xyz"
-        exit 1
-    fi
 
     # 安装 Drosera
     echo "正在安装 Drosera..."
@@ -228,7 +151,7 @@ function install_drosera_node() {
         echo "Drosera 未找到（$DROsera_BIN 不存在）"
         exit 1
     fi
-
+    rm -rf /root/my-drosera-trap
     # 创建 my-drosera-trap 目录并切换
     echo "创建 my-drosera-trap 目录并切换..."
     mkdir -p /root/my-drosera-trap && cd /root/my-drosera-trap || { echo "目录创建或切换失败"; exit 1; }
